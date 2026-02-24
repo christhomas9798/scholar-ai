@@ -1,0 +1,152 @@
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+    background: var(--background);
+}
+
+.sidebar {
+    width: 260px;
+    height: calc(100vh - 2rem);
+    margin: 1rem;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+}
+
+.logo {
+    margin-bottom: 3rem;
+}
+
+.logo h2 {
+    font-size: 1.5rem;
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.navItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    color: var(--muted-foreground);
+    transition: all 0.2s ease;
+}
+
+.navItem:hover {
+    background: var(--input);
+    color: var(--foreground);
+}
+
+.navActive {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--foreground);
+    font-weight: 500;
+}
+
+.navActive:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+.sidebarFooter {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.userInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0 0.25rem;
+}
+
+.userName {
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+}
+
+.roleChip {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.625rem;
+    border-radius: 1rem;
+    width: fit-content;
+    letter-spacing: 0.02em;
+}
+
+.rolePrincipal {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+}
+
+.roleTeacher {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+}
+
+.logoutBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    color: var(--destructive);
+    cursor: pointer;
+    border-radius: 0.75rem;
+    transition: background 0.2s;
+}
+
+.logoutBtn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.main {
+    margin-left: 280px;
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.welcome h1 {
+    font-size: 1.875rem;
+}
+
+.subtitle {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    margin-top: 0.25rem;
+}
+
+.content {
+    flex: 1;
+}
+
+.loading {
+    display: flex;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--background);
+}
