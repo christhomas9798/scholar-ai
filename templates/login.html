@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - ScholarAI</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="login-page">
+    <div class="login-card">
+        <div class="login-brand">
+            <i data-lucide="graduation-cap"
+                style="width: 48px; height: 48px; color: var(--accent); margin-bottom: 12px;"></i>
+            <h1>ScholarAI</h1>
+            <p>Future of School Management</p>
+        </div>
+
+        {% if error %}
+        <div class="error-msg">
+            <i data-lucide="alert-circle"
+                style="width: 16px; height: 16px; display: inline-block; vertical-align: text-bottom;"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/login">
+            <div class="form-group">
+                <label for="email">Work Email</label>
+                <input type="email" id="email" name="email" placeholder="name@school.edu" required autocomplete="email"
+                    autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required
+                    autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn-primary">Sign In</button>
+        </form>
+
+        <div
+            style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); text-align: center;">
+            <p style="margin-bottom: 8px;">Demo Accounts</p>
+            <p>Principal: principal@school.edu (pwd: Principal@2025!)</p>
+            <p>Teacher: john.doe@school.edu (pwd: JohnMath@101)</p>
+        </div>
+    </div>
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

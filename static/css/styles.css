@@ -1,0 +1,772 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #e8e8f0;
+    --muted: #6b7080;
+    --accent: #7c6df0;
+    --accent2: #5b8ef0;
+    --success: #4ade80;
+    --warn: #fb923c;
+    --danger: #f87171;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button {
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg3);
+    border-radius: 4px;
+}
+
+/* ─── Layout ────────────────────────────────────────────────────────────── */
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+}
+
+.sidebar-brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent);
+    padding: 0 8px 24px;
+}
+
+.sidebar-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all 0.2s;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    background: rgba(124, 109, 240, 0.12);
+    color: var(--text);
+}
+
+.nav-item.active {
+    color: var(--accent);
+}
+
+.nav-item svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.sidebar-user {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-top: 8px;
+}
+
+.user-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: rgba(124, 109, 240, 0.15);
+    color: var(--accent);
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+.user-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background: rgba(248, 113, 113, 0.1);
+    color: var(--danger);
+}
+
+.main-content {
+    margin-left: 240px;
+    flex: 1;
+    padding: 32px;
+    min-height: 100vh;
+}
+
+/* ─── Page Header ───────────────────────────────────────────────────────── */
+.page-header {
+    margin-bottom: 28px;
+}
+
+.page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.page-header p {
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin-top: 4px;
+}
+
+/* ─── Cards ─────────────────────────────────────────────────────────────── */
+.card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.card-sm {
+    padding: 16px;
+}
+
+/* ─── Stats Grid ────────────────────────────────────────────────────────── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.stat-label svg {
+    width: 16px;
+    height: 16px;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-sub {
+    font-size: 0.75rem;
+    color: var(--success);
+    margin-top: 6px;
+}
+
+/* ─── Table ─────────────────────────────────────────────────────────────── */
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+thead th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+tbody td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ─── Badges ────────────────────────────────────────────────────────────── */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.badge-present {
+    background: rgba(74, 222, 128, 0.1);
+    color: var(--success);
+}
+
+.badge-absent {
+    background: rgba(248, 113, 113, 0.1);
+    color: var(--danger);
+}
+
+.badge-late {
+    background: rgba(251, 146, 60, 0.1);
+    color: var(--warn);
+}
+
+.badge-excused {
+    background: rgba(124, 109, 240, 0.1);
+    color: var(--accent);
+}
+
+.badge-urgent {
+    background: rgba(248, 113, 113, 0.1);
+    color: var(--danger);
+}
+
+.badge-high {
+    background: rgba(251, 146, 60, 0.1);
+    color: var(--warn);
+}
+
+.badge-normal {
+    background: rgba(74, 222, 128, 0.1);
+    color: var(--success);
+}
+
+.badge-low {
+    background: rgba(107, 112, 128, 0.1);
+    color: var(--muted);
+}
+
+.badge-active {
+    background: rgba(74, 222, 128, 0.1);
+    color: var(--success);
+}
+
+.badge-teacher {
+    background: rgba(91, 142, 240, 0.1);
+    color: var(--accent2);
+}
+
+.badge-principal {
+    background: rgba(251, 146, 60, 0.1);
+    color: var(--warn);
+}
+
+/* ─── Announcements ─────────────────────────────────────────────────────── */
+.announcement {
+    border-left: 3px solid var(--border);
+    padding: 14px 16px;
+    border-radius: 0 8px 8px 0;
+    background: var(--bg3);
+    margin-bottom: 12px;
+}
+
+.announcement.urgent {
+    border-color: var(--danger);
+}
+
+.announcement.high {
+    border-color: var(--warn);
+}
+
+.announcement.normal {
+    border-color: var(--success);
+}
+
+.announcement-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.announcement-meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+.announcement-body {
+    font-size: 0.83rem;
+    color: rgba(232, 232, 240, 0.7);
+    margin-top: 6px;
+}
+
+/* ─── Events ────────────────────────────────────────────────────────────── */
+.event-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.event-item:last-child {
+    border-bottom: none;
+}
+
+.event-date-box {
+    background: var(--bg3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: center;
+    min-width: 52px;
+}
+
+.event-month {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.event-day {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+}
+
+.event-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.event-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.event-type-badge {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+/* ─── Search / Input ────────────────────────────────────────────────────── */
+.search-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.search-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.875rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    border-color: var(--accent);
+}
+
+.search-input::placeholder {
+    color: var(--muted);
+}
+
+/* ─── Login Page ────────────────────────────────────────────────────────── */
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: radial-gradient(ellipse at 50% 0%, rgba(124, 109, 240, 0.12) 0%, transparent 60%);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 40px 36px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+}
+
+.login-brand {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.login-brand h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.login-brand p {
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin-top: 4px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.form-group input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.9rem;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+}
+
+.form-group input:focus {
+    border-color: var(--accent);
+}
+
+.btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: opacity 0.2s;
+    margin-top: 8px;
+}
+
+.btn-primary:hover {
+    opacity: 0.85;
+}
+
+.error-msg {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    color: var(--danger);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+}
+
+/* ─── Chat ───────────────────────────────────────────────────────────────── */
+.chat-layout {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 64px);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.msg-user {
+    align-self: flex-end;
+    max-width: 70%;
+}
+
+.msg-user .msg-bubble {
+    background: var(--accent);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 18px 18px 4px 18px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.msg-bot {
+    align-self: flex-start;
+    max-width: 85%;
+}
+
+.msg-bot .msg-bubble {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    border-radius: 4px 18px 18px 18px;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.msg-bot .msg-bubble table {
+    font-size: 0.8rem;
+    margin: 12px 0;
+    width: 100%;
+}
+
+.msg-bot .msg-bubble th {
+    padding: 6px 10px;
+    color: var(--muted);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+}
+
+.msg-bot .msg-bubble td {
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.msg-bot .msg-bubble hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 12px 0;
+}
+
+.chat-input-area {
+    border-top: 1px solid var(--border);
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+}
+
+.chat-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    color: var(--text);
+    font-size: 0.875rem;
+    padding: 12px 20px;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    border-color: var(--accent);
+}
+
+.chat-send {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.chat-send:hover {
+    opacity: 0.85;
+}
+
+.chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 16px 12px;
+}
+
+.chat-suggestion {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.chat-suggestion:hover {
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.typing {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.typing span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: pulse 1.2s infinite;
+}
+
+.typing span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes pulse {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ─── Empty state ───────────────────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+}
+
+.empty-state svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+.empty-state p {
+    font-size: 0.875rem;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 60px;
+        padding: 16px 8px;
+    }
+
+    .sidebar-brand,
+    .nav-label,
+    .sidebar-user {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 60px;
+        padding: 20px 16px;
+    }
+
+    .nav-item {
+        justify-content: center;
+    }
+}

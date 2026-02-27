@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Students | ScholarAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Student Directory</h1>
+    <p>View and manage student records</p>
+</div>
+
+<div class="search-bar">
+    <input type="text" id="student-search" class="search-input" placeholder="Search by name, email, or section...">
+    <select id="grade-filter" class="search-input" style="max-width: 150px;">
+        <option value="">All Grades</option>
+        <option value="9">Grade 9</option>
+        <option value="10">Grade 10</option>
+        <option value="11">Grade 11</option>
+        <option value="12">Grade 12</option>
+    </select>
+</div>
+
+<div class="card card-sm">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Grade</th>
+                    <th>Section</th>
+                    <th>Gender</th>
+                    <th>Enrolled</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="students-body">
+                <tr>
+                    <td colspan="6" style="text-align:center;color:var(--muted)">Loading students...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let ALL_STUDENTS = [];
+
+    function render(students) {
+        const b = document.getElementById('students-body');
+        if (!students.length) { b.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No students found.</td></tr>'; return; }
+        b.innerHTML = students.map(s => `
+      <tr>
+        <td>
+          <div style="font-weight:600">${s.name}</div>
+          <div style="font-size:0.75rem;color:var(--muted)">${s.email}</div>
+        </td>
+        <td>Grade ${s.gradeLevel}</td>
+        <td><div class="badge badge-excused">${s.sectionName || 'Unassigned'}</div></td>
+        <td>${s.gender}</td>
+        <td>${new Date(s.enrollmentDate).toLocaleDateString()}</td>
+        <td><div class="badge badge-${s.status.toLowerCase()}">${s.status}</div></td>
+      </tr>
+    `).join('');
+    }
+
+    fetch('/api/students')
+        .then(r => r.json())
+        .then(data => {
+            ALL_STUDENTS = data;
+            render(data);
+        });
+
+    const search = document.getElementById('student-search');
+    const filter = document.getElementById('grade-filter');
+
+    function update() {
+        const q = search.value.toLowerCase();
+        const g = filter.value;
+        const filtered = ALL_STUDENTS.filter(s => {
+            const matchQ = s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || (s.sectionName && s.sectionName.toLowerCase().includes(q));
+            const matchG = g ? s.gradeLevel === parseInt(g) : true;
+            return matchQ && matchG;
+        });
+        render(filtered);
+    }
+
+    search.addEventListener('input', update);
+    filter.addEventListener('change', update);
+</script>
+{% endblock %}

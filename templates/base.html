@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ScholarAI{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">ScholarAI</div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard" class="nav-item {% if request.url.path == '/dashboard' %}active{% endif %}">
+          <i data-lucide="layout-dashboard"></i>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        {% if user.role in ['PRINCIPAL', 'VICE_PRINCIPAL', 'ADMIN'] %}
+        <a href="/dashboard/teachers" class="nav-item {% if request.url.path == '/dashboard/teachers' %}active{% endif %}">
+          <i data-lucide="shield"></i>
+          <span class="nav-label">Teachers</span>
+        </a>
+        {% endif %}
+        <a href="/dashboard/students" class="nav-item {% if request.url.path == '/dashboard/students' %}active{% endif %}">
+          <i data-lucide="users"></i>
+          <span class="nav-label">{% if user.role in ['TEACHER', 'COUNSELOR'] %}My Students{% else %}All Students{% endif %}</span>
+        </a>
+        <a href="/dashboard/attendance" class="nav-item {% if request.url.path == '/dashboard/attendance' %}active{% endif %}">
+          <i data-lucide="user-check"></i>
+          <span class="nav-label">Attendance</span>
+        </a>
+        <a href="/dashboard/chat" class="nav-item {% if request.url.path == '/dashboard/chat' %}active{% endif %}">
+          <i data-lucide="message-square"></i>
+          <span class="nav-label">AI Assistant</span>
+        </a>
+      </nav>
+      <div class="sidebar-user">
+        <div class="user-badge"><i data-lucide="award" style="width: 12px; height: 12px; display: inline; margin-bottom: -2px;"></i> {{ user.role.replace('_', ' ').title() }}</div>
+        <div class="user-name">{{ user.name }}</div>
+        <a href="/logout" class="logout-btn"><i data-lucide="log-out"></i> <span class="nav-label">Logout</span></a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  
+  <script>
+    lucide.createIcons();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

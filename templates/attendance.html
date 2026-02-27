@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Attendance | ScholarAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h1>Attendance Matrix</h1>
+            <p>View daily attendance records</p>
+        </div>
+        <div>
+            <input type="date" id="date-picker" class="search-input" value="{{ today }}" style="width: 200px;">
+        </div>
+    </div>
+</div>
+
+<div class="card card-sm">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Grade</th>
+                    <th>Section</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody id="att-body">
+                <tr>
+                    <td colspan="6" style="text-align:center;color:var(--muted)">Loading attendance...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function render(atts) {
+        const b = document.getElementById('att-body');
+        if (!atts.length) { b.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)"><div class="empty-state"><i data-lucide="user-minus"></i><p>No attendance records for this date</p></div></td></tr>'; return; }
+        b.innerHTML = atts.map(a => `
+      <tr>
+        <td style="font-weight:600">${a.studentName}</td>
+        <td>Grade ${a.gradeLevel}</td>
+        <td><div class="badge badge-excused">${a.sectionName}</div></td>
+        <td>${a.date}</td>
+        <td><div class="badge badge-${a.status.toLowerCase()}">${a.status}</div></td>
+        <td style="color:var(--muted); font-size:0.8rem">—</td>
+      </tr>
+    `).join('');
+        lucide.createIcons();
+    }
+
+    function fetchAtt(dateStr) {
+        fetch('/api/attendance?date_param=' + dateStr)
+            .then(r => r.json())
+            .then(data => render(data));
+    }
+
+    const picker = document.getElementById('date-picker');
+    picker.value = new Date().toISOString().split('T')[0];
+    fetchAtt(picker.value);
+
+    picker.addEventListener('change', e => {
+        document.getElementById('att-body').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Loading...</td></tr>';
+        fetchAtt(e.target.value);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | ScholarAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h1>Welcome back, {{ user.name.split()[0] if user.name.startswith('Dr.') else user.name.split()[1] if ' ' in
+                user.name else user.name }}</h1>
+            <p>Here's what's happening today at school.</p>
+        </div>
+        <div style="text-align: right; color: var(--muted); font-size: 0.85rem;">
+            <i data-lucide="calendar"
+                style="width: 14px; height: 14px; display: inline-block; vertical-align: text-bottom;"></i>
+            <span id="date-display">Today</span>
+        </div>
+    </div>
+</div>
+
+<div class="stats-grid" id="stats-container">
+    <!-- Filled via JS -->
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+    <!-- Main Column -->
+    <div>
+        {% if user.role == 'TEACHER' %}
+        <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;">Today's Classes</h2>
+        <div class="card card-sm" style="margin-bottom: 24px;">
+            <div class="table-wrap">
+                <table id="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Time</th>
+                            <th>Subject</th>
+                            <th>Section</th>
+                            <th>Room</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-body">
+                        <tr>
+                            <td colspan="5" style="text-align:center;color:var(--muted)">Loading schedule...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <h2
+            style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+            Upcoming Events
+            <i data-lucide="calendar" style="width: 18px; color: var(--accent);"></i>
+        </h2>
+        <div class="card card-sm">
+            <div id="events-container">
+                <div style="text-align:center;color:var(--muted);padding:20px;">Loading events...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Column -->
+    <div>
+        <h2
+            style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+            Announcements
+            <i data-lucide="bell" style="width: 18px; color: var(--accent);"></i>
+        </h2>
+        <div id="announcements-container">
+            <div style="text-align:center;color:var(--muted);padding:20px;">Loading...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+    // Fetch stats based on role
+    fetch('/api/stats')
+        .then(r => r.json())
+        .then(data => {
+            const g = document.getElementById('stats-container');
+            const st = data.stats;
+
+            if (['PRINCIPAL', 'VICE_PRINCIPAL', 'ADMIN'].includes(data.role)) {
+                g.innerHTML = `
+          <div class="stat-card">
+            <div class="stat-label"><i data-lucide="users"></i> Total Students</div>
+            <div class="stat-value">${st.students || 0}</div>
+            <div class="stat-sub">+12 this term</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i data-lucide="briefcase"></i> Total Teachers</div>
+            <div class="stat-value">${st.teachers || 0}</div>
+            <div class="stat-sub">Fully staffed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i data-lucide="file-text"></i> School Avg Grade</div>
+            <div class="stat-value">${st.avgGrade || 0}</div>
+            <div class="stat-sub" style="color:var(${st.avgGrade > 80 ? '--success' : '--danger'})">Across all subjects</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i data-lucide="calendar"></i> Weekly Attendance</div>
+            <div class="stat-value">${st.attendanceRate || 0}%</div>
+            <div class="stat-sub" style="color:var(${st.attendanceRate > 90 ? '--success' : '--danger'})">Last 7 days</div>
+          </div>
+        `;
+            } else if (data.role === 'TEACHER') {
+                g.innerHTML = `
+          <div class="stat-card">
+            <div class="stat-label"><i data-lucide="users"></i> My Students</div>
+            <div class="stat-value">${st.myStudents || 0}</div>
+            <div class="stat-sub">Across ${st.sections}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i data-lucide="book-open"></i> Subjects Taught</div>
+            <div class="stat-value">${st.mySubjects || 0}</div>
+            <div class="stat-sub">${st.subjectNames}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i data-lucide="file-text"></i> Class Avg Grade</div>
+            <div class="stat-value">${st.avgGrade || 0}</div>
+            <div class="stat-sub" style="color:var(${st.avgGrade > 80 ? '--success' : '--danger'})">Your assignments</div>
+          </div>
+        `;
+            }
+            lucide.createIcons();
+        });
+
+    // Announcements
+    fetch('/api/announcements')
+        .then(r => r.json())
+        .then(anns => {
+            const c = document.getElementById('announcements-container');
+            if (!anns.length) { c.innerHTML = '<div class="card card-sm empty-state"><i data-lucide="bell-off"></i><p>No announcements right now.</p></div>'; return; }
+            c.innerHTML = anns.map(a => `
+        <div class="announcement ${a.priority.toLowerCase()}">
+          <div class="announcement-title">
+            ${a.title}
+          </div>
+          <div class="announcement-meta">Posted by ${a.authorName} &bull; ${new Date(a.createdAt).toLocaleDateString()}</div>
+          <div class="announcement-body">${a.content}</div>
+        </div>
+      `).join('');
+            lucide.createIcons();
+        });
+
+    // Events
+    fetch('/api/events')
+        .then(r => r.json())
+        .then(evs => {
+            const c = document.getElementById('events-container');
+            if (!evs.length) { c.innerHTML = '<div class="empty-state" style="padding:20px"><p>No upcoming events.</p></div>'; return; }
+
+            const today = new Date();
+            // Only show upcoming
+            const up = evs.filter(e => new Date(e.startDate) >= today.setHours(0, 0, 0, 0));
+
+            c.innerHTML = up.slice(0, 5).map(e => {
+                const d = new Date(e.startDate);
+                const typemap = { 'EXAM': 'var(--danger)', 'HOLIDAY': 'var(--accent)', 'PTM': 'var(--warn)', 'SPORTS': 'var(--success)', 'CULTURAL': 'var(--accent2)' };
+                const col = typemap[e.type] || 'var(--muted)';
+                return `
+          <div class="event-item">
+            <div class="event-date-box" style="border:1px solid ${col}40">
+              <div class="event-month" style="color:${col}">${d.toLocaleString('en-US', { month: 'short' })}</div>
+              <div class="event-day">${d.getDate()}</div>
+            </div>
+            <div class="event-info">
+              <div class="event-name">${e.title}</div>
+              <div class="badge badge-normal" style="margin-top:4px; font-size:0.6rem; background:transparent; border:1px solid var(--border); color:${col}">${e.type}</div>
+            </div>
+          </div>
+        `;
+            }).join('');
+        });
+
+    // Schedule (Teacher)
+    const tb = document.getElementById('schedule-body');
+    if (tb) {
+        const todayNum = new Date().getDay(); // 0(Sun) - 6(Sat)
+        fetch('/api/schedule')
+            .then(r => r.json())
+            .then(sch => {
+                // Find today's classes
+                const tdy = sch.filter(s => s.dayOfWeek === todayNum);
+                if (!tdy.length) { tb.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">No classes scheduled for today.</td></tr>`; return; }
+                tb.innerHTML = tdy.map(s => `
+          <tr>
+            <td><div class="badge badge-normal">Period ${s.period}</div></td>
+            <td>${s.startTime} - ${s.endTime}</td>
+            <td style="font-weight:500">${s.subjectName}</td>
+            <td><div class="badge badge-excused">${s.sectionName}</div></td>
+            <td>${s.roomName || 'TBD'}</td>
+          </tr>
+        `).join('');
+            });
+    }
+</script>
+{% endblock %}

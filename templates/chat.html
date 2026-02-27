@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}AI Assistant | ScholarAI{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 20px;">
+    <h1><i data-lucide="sparkles"
+            style="color:var(--accent); width:28px; height:28px; display:inline-block; vertical-align:middle; margin-right:8px; margin-top:-4px;"></i>AI
+        Assistant</h1>
+    <p>Ask questions about your school data in plain English</p>
+</div>
+
+<div class="card" style="padding: 0; display: flex; flex-direction: column; height: calc(100vh - 160px);">
+    <div class="chat-messages" id="chat">
+        <div class="msg-bot">
+            <div class="msg-bubble">
+                <div style="font-weight:600; font-size:0.9rem; margin-bottom:4px; color:var(--accent);">ScholarAI</div>
+                Hello {{ user.name.split()[0] if user.name.startswith('Dr.') else user.name.split()[1] if ' ' in
+                user.name else user.name }}! I can help you analyze school data, track attendance, and monitor
+                performance. What would you like to know?
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-suggestions" id="suggestions">
+        <button class="chat-suggestion" onclick="sendCustom('How many students are enrolled?')">How many students are
+            enrolled?</button>
+        <button class="chat-suggestion" onclick="sendCustom('Who are the top 5 students by average grade?')">Top 5
+            students by grade</button>
+        <button class="chat-suggestion" onclick="sendCustom('Show me students at risk (avg score < 65)')">Show at-risk
+            students</button>
+        <button class="chat-suggestion" onclick="sendCustom('How many students were absent yesterday?')">Absences
+            yesterday</button>
+    </div>
+
+    <form id="chat-form" class="chat-input-area" onsubmit="submitForm(event)">
+        <input type="text" id="chat-inp" class="chat-input" placeholder="Ask about students, grades, attendance..."
+            autocomplete="off" autofocus>
+        <button type="submit" class="chat-send" id="send-btn" disabled>
+            <i data-lucide="send" style="width:20px;"></i>
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let messages = [];
+
+    const inp = document.getElementById('chat-inp');
+    const btn = document.getElementById('send-btn');
+    const chat = document.getElementById('chat');
+
+    inp.addEventListener('input', () => {
+        btn.disabled = !inp.value.trim();
+    });
+
+    function appendUser(text) {
+        const div = document.createElement('div');
+        div.className = 'msg-user';
+        div.innerHTML = `<div class="msg-bubble">${text}</div>`;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function appendBotTyping() {
+        const div = document.createElement('div');
+        div.className = 'msg-bot';
+        div.id = 'typing';
+        div.innerHTML = `
+      <div class="msg-bubble typing">
+        <span></span><span></span><span></span>
+      </div>`;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function appendBotResp(data) {
+        const t = document.getElementById('typing');
+        if (t) t.remove();
+
+        const div = document.createElement('div');
+        div.className = 'msg-bot';
+
+        let html = `<div class="msg-bubble">`;
+        if (data.type === 'error') {
+            html += `<div style="color:var(--danger)">${data.content}</div>`;
+            if (data.sql) html += `<div style="margin-top:8px;font-size:0.75rem;color:var(--muted);font-family:monospace;white-space:pre-wrap;">${data.sql}</div>`;
+        } else if (data.type === 'text') {
+            html += `${data.content}`;
+        } else if (data.type === 'empty') {
+            html += `<div>${data.content}</div>`;
+        } else if (data.type === 'table') {
+            html += `<div><strong style="color:var(--accent)">Results (${data.rowCount} rows)</strong></div>`;
+
+            // Parse markdown table to HTML via rudimentary split (marked.js would be better but keeping it zero-dependency)
+            const lines = data.table.split('\n');
+            if (lines.length > 2) {
+                let tableHtml = '<table><thead><tr>';
+                const headers = lines[0].split('|').slice(1, -1).map(s => s.trim());
+                tableHtml += headers.map(h => `<th>${h}</th>`).join('');
+                tableHtml += '</tr></thead><tbody>';
+                for (let i = 2; i < lines.length; i++) {
+                    const cells = lines[i].split('|').slice(1, -1).map(s => s.trim());
+                    if (cells.length === headers.length) {
+                        tableHtml += '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+                    }
+                }
+                tableHtml += '</tbody></table>';
+                html += tableHtml;
+            }
+
+            html += `<hr><div style="font-size:0.85rem">${data.insight}</div>`;
+        }
+
+        html += `</div>`;
+        div.innerHTML = html;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function sendReq(text) {
+        appendUser(text);
+        messages.push({ role: "user", content: text });
+        document.getElementById('suggestions').style.display = 'none';
+        inp.value = '';
+        btn.disabled = true;
+        appendBotTyping();
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages })
+            });
+            const data = await res.json();
+
+            // Do not store AI tables in history context to save tokens, just store the query or a summary
+            messages.push({
+                role: "assistant",
+                content: data.type === 'table' ? data.insight : (data.content || "Query executed.")
+            });
+
+            appendBotResp(data);
+        } catch (e) {
+            const t = document.getElementById('typing');
+            if (t) t.remove();
+            chat.insertAdjacentHTML('beforeend', `<div class="msg-bot"><div class="msg-bubble" style="color:var(--danger)">Connection error. Please try again.</div></div>`);
+        }
+    }
+
+    function submitForm(e) {
+        e.preventDefault();
+        if (!inp.value.trim()) return;
+        sendReq(inp.value.trim());
+    }
+
+    window.sendCustom = function (t) { sendReq(t); };
+</script>
+{% endblock %}

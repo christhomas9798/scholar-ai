@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Teachers | ScholarAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Staff Directory</h1>
+    <p>Manage teachers and departments</p>
+</div>
+
+<div class="search-bar">
+    <input type="text" id="teacher-search" class="search-input" placeholder="Search by name, email, or department...">
+</div>
+
+<div class="card card-sm">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Staff Member</th>
+                    <th>Role</th>
+                    <th>Department</th>
+                    <th>Contact</th>
+                    <th>Stats</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="teachers-body">
+                <tr>
+                    <td colspan="6" style="text-align:center;color:var(--muted)">Loading staff...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let ALL_TEACHERS = [];
+
+    function render(teachers) {
+        const b = document.getElementById('teachers-body');
+        if (!teachers.length) { b.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No staff found.</td></tr>'; return; }
+        b.innerHTML = teachers.map(t => {
+            let rclass = t.role === 'PRINCIPAL' || t.role === 'VICE_PRINCIPAL' ? 'badge-principal' : 'badge-teacher';
+            return `
+      <tr>
+        <td>
+          <div style="font-weight:600">${t.name}</div>
+          <div style="font-size:0.75rem;color:var(--muted)">Since ${new Date(t.hireDate).getFullYear()}</div>
+        </td>
+        <td><div class="badge ${rclass}">${t.role.replace('_', ' ')}</div></td>
+        <td>${t.departmentName || 'Admin'}</td>
+        <td>
+          <div style="font-size:0.8rem">${t.email}</div>
+          <div style="font-size:0.75rem;color:var(--muted)">${t.phone}</div>
+        </td>
+        <td>
+          ${t.role === 'TEACHER' ? `<div style="font-size:0.8rem">${t.subjectCount} Subjects <span style="color:var(--muted)">•</span> ${t.sectionCount} Sections</div>` : `<span style="color:var(--muted)">—</span>`}
+        </td>
+        <td><div class="badge ${t.isActive ? 'badge-active' : 'badge-absent'}">${t.isActive ? 'ACTIVE' : 'INACTIVE'}</div></td>
+      </tr>
+      `
+        }).join('');
+    }
+
+    fetch('/api/teachers')
+        .then(r => r.json())
+        .then(data => {
+            ALL_TEACHERS = data;
+            render(data);
+        });
+
+    const search = document.getElementById('teacher-search');
+    search.addEventListener('input', () => {
+        const q = search.value.toLowerCase();
+        const f = ALL_TEACHERS.filter(t => t.name.toLowerCase().includes(q) || t.email.toLowerCase().includes(q) || (t.departmentName && t.departmentName.toLowerCase().includes(q)));
+        render(f);
+    });
+</script>
+{% endblock %}
