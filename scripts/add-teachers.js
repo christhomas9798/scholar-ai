@@ -1,3 +1,4 @@
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') })
 const { PrismaClient } = require('@prisma/client')
 const { PrismaPg } = require('@prisma/adapter-pg')
 const { Pool } = require('pg')
@@ -19,6 +20,9 @@ async function main() {
         { email: 'lisa.patel@school.edu', name: 'Ms. Lisa Patel', role: 'TEACHER' },
         { email: 'david.kim@school.edu', name: 'Mr. David Kim', role: 'TEACHER' },
         { email: 'rachel.green@school.edu', name: 'Ms. Rachel Green', role: 'TEACHER' },
+        // Previously missing from PostgreSQL — these existed only in SQLite
+        { email: 'carlos.rivera@school.edu', name: 'Mr. Carlos Rivera', role: 'TEACHER' },
+        { email: 'amanda.foster@school.edu', name: 'Ms. Amanda Foster', role: 'TEACHER' },
     ]
 
     for (const t of teachers) {
