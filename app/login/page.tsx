@@ -75,7 +75,7 @@ export default function LoginPage() {
                 </form>
 
                 <p className={styles.footer}>
-                    Principal: principal@school.edu (pwd: password123)
+                    Contact your administrator for login credentials.
                 </p>
             </div>
         </main>

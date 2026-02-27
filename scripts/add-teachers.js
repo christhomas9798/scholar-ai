@@ -1,56 +1,109 @@
-const { PrismaClient } = require('@prisma/client')
-const { PrismaPg } = require('@prisma/adapter-pg')
-const { Pool } = require('pg')
+#!/usr/bin/env node
+/**
+ * scripts/add-teachers.js
+ *
+ * Utility script to manually add new staff accounts to the SQLite database.
+ * Uses better-sqlite3 directly (same as the app) — no Prisma, no Postgres.
+ *
+ * Usage:
+ *   node scripts/add-teachers.js
+ *
+ * Edit the `newStaff` array below before running.
+ */
+
+const Database = require('better-sqlite3')
 const bcrypt = require('bcrypt')
+const path = require('path')
+const crypto = require('crypto')
+
+const DB_PATH = path.join(__dirname, '..', 'scholar.db')
+
+function generateId() {
+    return `id_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`
+}
+
+// ─── Edit this list to add staff ────────────────────────────────────────────
+// Each entry must have: email, name, role, password
+// Roles: PRINCIPAL | VICE_PRINCIPAL | TEACHER | COUNSELOR | ADMIN
+const newStaff = [
+    {
+        email: 'alex.nguyen@school.edu',
+        name: 'Mr. Alex Nguyen',
+        role: 'TEACHER',
+        password: 'AlexNguyenT@25',
+    },
+    {
+        email: 'priya.sharma@school.edu',
+        name: 'Ms. Priya Sharma',
+        role: 'TEACHER',
+        password: 'PriyaShm@25!',
+    },
+]
+// ────────────────────────────────────────────────────────────────────────────
 
 async function main() {
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL })
-    const adapter = new PrismaPg(pool)
-    const prisma = new PrismaClient({ adapter })
+    const db = new Database(DB_PATH)
+    db.pragma('journal_mode = WAL')
+    db.pragma('foreign_keys = ON')
 
-    const passwordHash = await bcrypt.hash('password123', 10)
+    // Verify the database has been initialized
+    const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='User'").get()
+    if (!tableExists) {
+        console.error('❌ Database not initialized yet. Start the app first (npm run dev) to trigger seeding.')
+        process.exit(1)
+    }
 
-    const teachers = [
-        { email: 'john.doe@school.edu', name: 'Mr. John Doe', role: 'TEACHER' },
-        { email: 'sarah.wilson@school.edu', name: 'Ms. Sarah Wilson', role: 'TEACHER' },
-        { email: 'michael.chen@school.edu', name: 'Mr. Michael Chen', role: 'TEACHER' },
-        { email: 'emily.davis@school.edu', name: 'Ms. Emily Davis', role: 'TEACHER' },
-        { email: 'james.brown@school.edu', name: 'Mr. James Brown', role: 'TEACHER' },
-        { email: 'lisa.patel@school.edu', name: 'Ms. Lisa Patel', role: 'TEACHER' },
-        { email: 'david.kim@school.edu', name: 'Mr. David Kim', role: 'TEACHER' },
-        { email: 'rachel.green@school.edu', name: 'Ms. Rachel Green', role: 'TEACHER' },
-    ]
+    console.log(`\n🔐 Hashing passwords and inserting ${newStaff.length} staff account(s)...\n`)
 
-    for (const t of teachers) {
+    const insert = db.prepare(
+        'INSERT INTO "User" (id, email, password, name, role, isActive) VALUES (?, ?, ?, ?, ?, 1)'
+    )
+
+    const results = []
+
+    for (const s of newStaff) {
+        // Check if email already exists
+        const existing = db.prepare('SELECT id, email FROM "User" WHERE email = ?').get(s.email)
+        if (existing) {
+            console.log(`⚠️  Skipped  — ${s.email} already exists`)
+            continue
+        }
+
+        // Hash the password individually (different salt per user)
+        const passwordHash = await bcrypt.hash(s.password, 10)
+
         try {
-            await prisma.user.upsert({
-                where: { email: t.email },
-                update: { name: t.name },
-                create: {
-                    email: t.email,
-                    name: t.name,
-                    password: passwordHash,
-                    role: t.role,
-                },
-            })
-            console.log(`✅ ${t.role}: ${t.email} -> ${t.name}`)
-        } catch (e) {
-            console.error(`❌ Failed: ${t.email}`, e.message)
+            insert.run(generateId(), s.email, passwordHash, s.name, s.role)
+            results.push(s)
+            console.log(`✅ Added    [${s.role.padEnd(14)}] ${s.email}`)
+        } catch (err) {
+            console.error(`❌ Failed   ${s.email}: ${err.message}`)
         }
     }
 
-    // List all users
-    const users = await prisma.user.findMany({
-        select: { email: true, name: true, role: true },
-        orderBy: { role: 'asc' },
-    })
-    console.log('\n📋 All accounts:')
-    for (const u of users) {
-        console.log(`  [${u.role}] ${u.email} — ${u.name}`)
+    // ── Summary ─────────────────────────────────────────────────────────────
+    if (results.length > 0) {
+        console.log('\n🔑 New credential(s) (shown once — save these now):')
+        console.log('   ───────────────────────────────────────────────────')
+        for (const s of results) {
+            console.log(`   [${s.role.padEnd(14)}] ${s.email.padEnd(32)} → ${s.password}`)
+        }
+        console.log('   ───────────────────────────────────────────────────')
+        console.log('   Passwords are bcrypt-hashed in the DB. Only the hash is stored.\n')
     }
 
-    await prisma.$disconnect()
-    pool.end()
+    // ── List all active staff ────────────────────────────────────────────────
+    const allStaff = db.prepare('SELECT email, name, role FROM "User" WHERE isActive = 1 ORDER BY role, name').all()
+    console.log(`\n📋 All active staff (${allStaff.length} total):`)
+    for (const u of allStaff) {
+        console.log(`   [${u.role.padEnd(14)}] ${u.email.padEnd(32)}  ${u.name}`)
+    }
+    console.log()
+
+    db.close()
 }
 
-main().catch(e => { console.error(e); process.exit(1) })
+main().catch(e => {
+    console.error('Fatal error:', e)
+    process.exit(1)
+})
