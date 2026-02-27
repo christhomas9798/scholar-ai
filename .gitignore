@@ -18,6 +18,11 @@
 
 # misc
 .DS_Store
+
+# SQLite database (auto-generated on server start — do not commit)
+*.db
+*.db-shm
+*.db-wal
 *.pem
 
 # debug
