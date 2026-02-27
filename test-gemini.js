@@ -1,8 +1,9 @@
+require('dotenv').config({ path: require('path').join(__dirname, '.env') })
 const { generateText } = require('ai');
 const { createGoogleGenerativeAI } = require('@ai-sdk/google');
 
 const google = createGoogleGenerativeAI({
-    apiKey: "process.env.GOOGLE_GENERATIVE_AI_API_KEY",
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
 async function main() {
