@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3'
+import { hashSync } from 'bcrypt'
 import path from 'path'
 
 const DB_PATH = path.join(process.cwd(), 'scholar.db')
@@ -89,9 +90,11 @@ function initializeDatabase(db: Database.Database) {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,          -- '10-A', '11-B'
       gradeLevel INTEGER NOT NULL, -- 9, 10, 11, 12
+      academicYearId TEXT NOT NULL, -- section belongs to a year, not just a term
       termId TEXT NOT NULL,
       roomId TEXT,
       maxCapacity INTEGER DEFAULT 35,
+      FOREIGN KEY (academicYearId) REFERENCES "AcademicYear"(id),
       FOREIGN KEY (termId) REFERENCES "Term"(id),
       FOREIGN KEY (roomId) REFERENCES "Room"(id)
     );
@@ -102,6 +105,7 @@ function initializeDatabase(db: Database.Database) {
 
     CREATE TABLE "Student" (
       id TEXT PRIMARY KEY,
+      admissionNo TEXT UNIQUE NOT NULL,  -- school-facing roll/admission number e.g. 'ADM-2025-0001'
       name TEXT NOT NULL,
       email TEXT,
       dateOfBirth TEXT,
@@ -157,7 +161,9 @@ function initializeDatabase(db: Database.Database) {
       endTime TEXT NOT NULL,       -- '08:45'
       roomId TEXT,
       FOREIGN KEY (teacherSubjectId) REFERENCES "TeacherSubject"(id),
-      FOREIGN KEY (roomId) REFERENCES "Room"(id)
+      FOREIGN KEY (roomId) REFERENCES "Room"(id),
+      UNIQUE (teacherSubjectId, dayOfWeek, period),  -- teacher can't teach same subject twice in same slot
+      UNIQUE (roomId, dayOfWeek, period)             -- room can't host two classes at once
     );
 
     -- =============================================
@@ -217,7 +223,8 @@ function initializeDatabase(db: Database.Database) {
       markedById TEXT,             -- teacher who marked it
       FOREIGN KEY (studentId) REFERENCES "Student"(id),
       FOREIGN KEY (sectionId) REFERENCES "Section"(id),
-      FOREIGN KEY (markedById) REFERENCES "User"(id)
+      FOREIGN KEY (markedById) REFERENCES "User"(id),
+      UNIQUE (studentId, date, period)  -- prevent duplicate attendance for same student/day/period
     );
 
     -- =============================================
@@ -272,6 +279,36 @@ function generateId(): string {
 }
 
 function seedDatabase(db: Database.Database) {
+    // Each staff member gets their own unique password, individually bcrypt-hashed.
+    // Hashing happens BEFORE the transaction (hashSync is slow, can't run inside SQLite tx).
+    // The auth flow uses bcrypt.compare(enteredPassword, storedHash) — never stores plain text.
+    const staffData = [
+        // Leadership
+        { name: 'Dr. Jane Smith', role: 'PRINCIPAL', deptIdx: -1, email: 'principal@school.edu', password: 'Principal@2025!' },
+        { name: 'Mr. Robert Clark', role: 'VICE_PRINCIPAL', deptIdx: -1, email: 'vp@school.edu', password: 'VPClark@2025#' },
+        // Math Department
+        { name: 'Mr. John Doe', role: 'TEACHER', deptIdx: 0, email: 'john.doe@school.edu', password: 'JohnMath@101' },
+        { name: 'Ms. Sarah Wilson', role: 'TEACHER', deptIdx: 0, email: 'sarah.wilson@school.edu', password: 'SarahAlg@202' },
+        // Science Department
+        { name: 'Mr. Michael Chen', role: 'TEACHER', deptIdx: 1, email: 'michael.chen@school.edu', password: 'MikeSci@Bio1' },
+        { name: 'Ms. Emily Davis', role: 'TEACHER', deptIdx: 1, email: 'emily.davis@school.edu', password: 'EmilyPhys@25' },
+        // English Department
+        { name: 'Mr. James Brown', role: 'TEACHER', deptIdx: 2, email: 'james.brown@school.edu', password: 'JamesEng@Lit' },
+        { name: 'Ms. Lisa Patel', role: 'TEACHER', deptIdx: 2, email: 'lisa.patel@school.edu', password: 'LisaAP@Eng25' },
+        // Social Studies
+        { name: 'Mr. David Kim', role: 'TEACHER', deptIdx: 3, email: 'david.kim@school.edu', password: 'DavidHist@25' },
+        { name: 'Ms. Rachel Green', role: 'TEACHER', deptIdx: 3, email: 'rachel.green@school.edu', password: 'RachelGov@25' },
+        // Arts & PE
+        { name: 'Mr. Carlos Rivera', role: 'TEACHER', deptIdx: 4, email: 'carlos.rivera@school.edu', password: 'CarlosPE@25!' },
+        { name: 'Ms. Amanda Foster', role: 'TEACHER', deptIdx: 4, email: 'amanda.foster@school.edu', password: 'AmandaArt@25' },
+        // Support staff
+        { name: 'Ms. Karen White', role: 'COUNSELOR', deptIdx: -1, email: 'counselor@school.edu', password: 'KarenCoun@25' },
+        { name: 'Mr. Tom Harris', role: 'ADMIN', deptIdx: -1, email: 'admin@school.edu', password: 'TomAdmin@25!' },
+    ]
+
+    // Hash every password individually before opening the transaction
+    const staffWithHashes = staffData.map(s => ({ ...s, passwordHash: hashSync(s.password, 10) }))
+
     const seedAll = db.transaction(() => {
         // =============================================
         // ACADEMIC YEAR & TERMS
@@ -346,38 +383,15 @@ function seedDatabase(db: Database.Database) {
         }
 
         // =============================================
-        // STAFF (Users)
+        // STAFF (Users) — each with their own bcrypt hash
         // =============================================
         const staff: { id: string; name: string; role: string; deptIdx: number; email: string }[] = []
-        const staffData = [
-            // Leadership
-            { name: 'Dr. Jane Smith', role: 'PRINCIPAL', deptIdx: -1, email: 'principal@school.edu' },
-            { name: 'Mr. Robert Clark', role: 'VICE_PRINCIPAL', deptIdx: -1, email: 'vp@school.edu' },
-            // Math Department
-            { name: 'Mr. John Doe', role: 'TEACHER', deptIdx: 0, email: 'john.doe@school.edu' },
-            { name: 'Ms. Sarah Wilson', role: 'TEACHER', deptIdx: 0, email: 'sarah.wilson@school.edu' },
-            // Science Department
-            { name: 'Mr. Michael Chen', role: 'TEACHER', deptIdx: 1, email: 'michael.chen@school.edu' },
-            { name: 'Ms. Emily Davis', role: 'TEACHER', deptIdx: 1, email: 'emily.davis@school.edu' },
-            // English Department
-            { name: 'Mr. James Brown', role: 'TEACHER', deptIdx: 2, email: 'james.brown@school.edu' },
-            { name: 'Ms. Lisa Patel', role: 'TEACHER', deptIdx: 2, email: 'lisa.patel@school.edu' },
-            // Social Studies
-            { name: 'Mr. David Kim', role: 'TEACHER', deptIdx: 3, email: 'david.kim@school.edu' },
-            { name: 'Ms. Rachel Green', role: 'TEACHER', deptIdx: 3, email: 'rachel.green@school.edu' },
-            // Arts & PE
-            { name: 'Mr. Carlos Rivera', role: 'TEACHER', deptIdx: 4, email: 'carlos.rivera@school.edu' },
-            { name: 'Ms. Amanda Foster', role: 'TEACHER', deptIdx: 4, email: 'amanda.foster@school.edu' },
-            // Support staff
-            { name: 'Ms. Karen White', role: 'COUNSELOR', deptIdx: -1, email: 'counselor@school.edu' },
-            { name: 'Mr. Tom Harris', role: 'ADMIN', deptIdx: -1, email: 'admin@school.edu' },
-        ]
 
-        for (const s of staffData) {
+        for (const s of staffWithHashes) {
             const id = generateId()
             staff.push({ id, ...s })
             db.prepare('INSERT INTO "User" (id, email, password, name, role, departmentId, phone, hireDate) VALUES (?,?,?,?,?,?,?,?)').run(
-                id, s.email, 'hashed', s.name, s.role,
+                id, s.email, s.passwordHash, s.name, s.role,
                 s.deptIdx >= 0 ? departments[s.deptIdx].id : null,
                 `555-${String(Math.floor(1000 + Math.random() * 9000))}`,
                 `${2018 + Math.floor(Math.random() * 7)}-0${1 + Math.floor(Math.random() * 8)}-15`
@@ -438,8 +452,8 @@ function seedDatabase(db: Database.Database) {
             const s = sectionDefs[i]
             const id = generateId()
             sections.push({ id, ...s })
-            db.prepare('INSERT INTO "Section" VALUES (?,?,?,?,?,?)').run(
-                id, s.name, s.gradeLevel, term2Id, rooms[i].id, 35
+            db.prepare('INSERT INTO "Section" (id, name, gradeLevel, academicYearId, termId, roomId, maxCapacity) VALUES (?,?,?,?,?,?,?)').run(
+                id, s.name, s.gradeLevel, yearId, term2Id, rooms[i].id, 35
             )
         }
 
@@ -474,10 +488,12 @@ function seedDatabase(db: Database.Database) {
             const id = generateId()
             const gender = genders[i % genders.length]
             const birthYear = 2010 - section.gradeLevel + 9
+            // admissionNo format: ADM-YYYY-NNNN (school-facing roll number)
+            const admissionNo = `ADM-2025-${String(i + 1).padStart(4, '0')}`
             students.push({ id, name: studentNames[i], sectionIdx, gradeLevel: section.gradeLevel })
 
-            db.prepare('INSERT INTO "Student" (id, name, email, dateOfBirth, gender, enrollmentDate, status, gradeLevel, sectionId) VALUES (?,?,?,?,?,?,?,?,?)').run(
-                id, studentNames[i],
+            db.prepare('INSERT INTO "Student" (id, admissionNo, name, email, dateOfBirth, gender, enrollmentDate, status, gradeLevel, sectionId) VALUES (?,?,?,?,?,?,?,?,?,?)').run(
+                id, admissionNo, studentNames[i],
                 `${studentNames[i].toLowerCase().replace(' ', '.')}@student.school.edu`,
                 `${birthYear}-${String(1 + Math.floor(Math.random() * 12)).padStart(2, '0')}-${String(1 + Math.floor(Math.random() * 28)).padStart(2, '0')}`,
                 gender, '2025-08-15', 'ACTIVE', section.gradeLevel, section.id
@@ -625,16 +641,20 @@ function seedDatabase(db: Database.Database) {
             { period: 8, start: '14:40', end: '15:25' },
         ]
 
-        const schedInsert = db.prepare('INSERT INTO "Schedule" VALUES (?,?,?,?,?,?,?)')
+        const schedInsert = db.prepare(
+            'INSERT OR IGNORE INTO "Schedule" (id, teacherSubjectId, dayOfWeek, period, startTime, endTime, roomId) VALUES (?,?,?,?,?,?,?)'
+        )
 
-        // Assign periods to teacher-subject combos across weekdays
+        // Assign periods to teacher-subject combos across weekdays.
+        // Room rotates by periodCounter so that no two slots share the same (room, day, period),
+        // satisfying the UNIQUE (roomId, dayOfWeek, period) constraint.
         let periodCounter = 0
         for (const ts of teacherSubjects) {
             // Each teacher-subject gets 3 periods per week
             for (let p = 0; p < 3; p++) {
                 const day = (periodCounter % 5) + 1  // 1-5 (Mon-Fri)
-                const periodSlot = periods[(periodCounter % 8)]
-                const roomIdx = Math.min(teacherSubjects.indexOf(ts) % rooms.length, rooms.length - 1)
+                const periodSlot = periods[periodCounter % 8]
+                const roomIdx = periodCounter % rooms.length  // rotate room per slot, not per teacher
                 schedInsert.run(
                     generateId(), ts.id, day, periodSlot.period,
                     periodSlot.start, periodSlot.end, rooms[roomIdx].id
@@ -688,7 +708,16 @@ function seedDatabase(db: Database.Database) {
     })
 
     seedAll()
-    console.log('✅ SQLite database seeded: 14 staff, 40 students, 17 subjects, 8 sections, grades, attendance, events')
+
+    console.log('\n✅ ScholarAI database seeded — 14 staff, 40 students, 17 subjects, 8 sections')
+    console.log('\n🔐 Staff login credentials (plain text shown once at seed time only):')
+    console.log('   ─────────────────────────────────────────────────────────────────')
+    for (const s of staffWithHashes) {
+        const roleLabel = s.role.padEnd(14)
+        console.log(`   [${roleLabel}] ${s.email.padEnd(32)} → ${s.password}`)
+    }
+    console.log('   ─────────────────────────────────────────────────────────────────')
+    console.log('   All passwords are bcrypt-hashed in the database. Only the hash is stored.\n')
 }
 
 // =============================================
