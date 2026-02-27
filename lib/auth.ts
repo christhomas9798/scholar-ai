@@ -1,50 +1,44 @@
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
-import { compare } from "bcrypt";
+import { NextAuthOptions } from 'next-auth'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import { compare } from 'bcrypt'
+import { getDb } from '@/lib/database'
 
+/**
+ * Auth reads directly from the SQLite database (scholar.db) via getDb().
+ * The Prisma/Postgres adapter has been removed — all data lives in SQLite.
+ */
 export const authOptions: NextAuthOptions = {
-    adapter: PrismaAdapter(prisma),
     session: {
-        strategy: "jwt",
+        strategy: 'jwt',
     },
     pages: {
-        signIn: "/login",
+        signIn: '/login',
     },
     providers: [
         CredentialsProvider({
-            name: "Credentials",
+            name: 'Credentials',
             credentials: {
-                email: { label: "Email", type: "email" },
-                password: { label: "Password", type: "password" },
+                email: { label: 'Email', type: 'email' },
+                password: { label: 'Password', type: 'password' },
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) {
-                    throw new Error("Missing email or password");
+                    throw new Error('Missing email or password')
                 }
 
-                const user = await prisma.user.findUnique({
-                    where: {
-                        email: credentials.email,
-                    },
-                });
+                const db = getDb()
+                const user = db
+                    .prepare('SELECT id, email, password, name, role FROM "User" WHERE email = ? AND isActive = 1')
+                    .get(credentials.email) as { id: string; email: string; password: string; name: string; role: string } | undefined
 
-                if (!user || !user.password) {
-                    throw new Error("Invalid credentials");
+                if (!user) {
+                    throw new Error('Invalid credentials')
                 }
 
-                // In a real app with hashed passwords, we use:
-                // const isValid = await compare(credentials.password, user.password);
-
-                // For the purpose of the local demo/seed, we'll check plain text 
-                // IF it matches the seed password ('password123'), or use compare if hashed.
-                // Let's assume we use hashed passwords in production.
-                // For now, let's keep it simple for the user.
-                const isValid = credentials.password === user.password || await compare(credentials.password, user.password);
+                const isValid = await compare(credentials.password, user.password)
 
                 if (!isValid) {
-                    throw new Error("Invalid credentials");
+                    throw new Error('Invalid credentials')
                 }
 
                 return {
@@ -52,7 +46,7 @@ export const authOptions: NextAuthOptions = {
                     email: user.email,
                     name: user.name,
                     role: user.role,
-                };
+                }
             },
         }),
     ],
@@ -63,9 +57,9 @@ export const authOptions: NextAuthOptions = {
                     ...token,
                     id: user.id,
                     role: (user as any).role,
-                };
+                }
             }
-            return token;
+            return token
         },
         async session({ session, token }) {
             return {
@@ -75,7 +69,7 @@ export const authOptions: NextAuthOptions = {
                     id: token.id,
                     role: token.role,
                 },
-            };
+            }
         },
     },
-};
+}
